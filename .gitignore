@@ -1,0 +1,4 @@
+*.swp
+.deps
+.libs
+autom4te.cache

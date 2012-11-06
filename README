@@ -1,6 +1,8 @@
 This version based on Archers yaourt sisimedia-0.10.3 pathed for use with xorg-server version > 1.12
 adapted by rasdark (andrew.senik@gmail.com)
 
+Does'nt work for xorg-server > 1.13 (no more XAA)
+
 For use add in xorg:
 
 Section "Device"
