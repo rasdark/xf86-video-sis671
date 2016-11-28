@@ -86,7 +86,6 @@
 #include "fb.h"
 #include "micmap.h"
 #include "mipointer.h"
-#include "mibstore.h"
 #include "edid.h"
 
 #define SIS_NEED_inSISREG
@@ -3214,12 +3213,14 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Find the PCI info for this screen */
     pSiS->PciInfo = xf86GetPciInfoForEntity(pSiS->pEnt->index);
-    pSiS->PciBus = PCI_CFG_BUS(pSiS->PciInfo);    
-    pSiS->PciDevice = PCI_CFG_DEV(pSiS->PciInfo); 
-    pSiS->PciFunc = PCI_CFG_FUNC(pSiS->PciInfo); 
-    pSiS->PciTag = pciTag(	PCI_DEV_BUS(pSiS->PciInfo), 
+    pSiS->PciBus = PCI_CFG_BUS(pSiS->PciInfo);
+    pSiS->PciDevice = PCI_CFG_DEV(pSiS->PciInfo);
+    pSiS->PciFunc = PCI_CFG_FUNC(pSiS->PciInfo);
+    #ifndef XSERVER_LIBPCIACCESS
+    pSiS->PciTag = pciTag(	PCI_DEV_BUS(pSiS->PciInfo),
 							PCI_DEV_DEV(pSiS->PciInfo),
 							PCI_DEV_FUNC(pSiS->PciInfo));
+    #endif
 
 #ifdef SIS_NEED_MAP_IOP
     /********************************************/
@@ -4060,7 +4061,9 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
 #endif
 
        memset(pSiS->SiS_Pr, 0, sizeof(struct SiS_Private));
+       #ifndef XSERVER_LIBPCIACCESS
        pSiS->SiS_Pr->PciTag = pSiS->PciTag;
+       #endif
        pSiS->SiS_Pr->ChipType = pSiS->ChipType;
        pSiS->SiS_Pr->ChipRevision = pSiS->ChipRev;
        pSiS->SiS_Pr->SiS_Backup70xx = 0xff;
@@ -8593,9 +8596,9 @@ SISModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	        /* No need to go through pScrn->AdjustFrame; the coords
 	         * didn't change
 	         */
-		SISAdjustFrame(pSiSEnt->pScrn_2->scrnIndex,
+		SISAdjustFrame(pSiSEnt->pScrn_2,
 			       pSiSEnt->pScrn_2->frameX0,
-			       pSiSEnt->pScrn_2->frameY0, 0);
+			       pSiSEnt->pScrn_2->frameY0);
 	     }
 	  } else {
 	     /* Head 2 (slave) is always CRT1 */
@@ -8612,9 +8615,9 @@ SISModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	        /* No need to go through pScrn->AdjustFrame; the coords
 	         * didn't change
 	         */
-		SISAdjustFrame(pSiSEnt->pScrn_1->scrnIndex,
+		SISAdjustFrame(pSiSEnt->pScrn_1,
 			       pSiSEnt->pScrn_1->frameX0,
-			       pSiSEnt->pScrn_1->frameY0, 0);
+			       pSiSEnt->pScrn_1->frameY0);
 	     }
 	  }
 
@@ -8660,7 +8663,7 @@ SISModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 		SiS_SiSLVDSBackLight(pSiS, TRUE);
 
-		(*pScrn->AdjustFrame)(pScrn->scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+		(*pScrn->AdjustFrame)(pScrn, pScrn->frameX0, pScrn->frameY0);
 
 	     } else {
 #endif
@@ -8770,14 +8773,13 @@ SISModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 /*******************************************************/
 
 static void
-SISBlockHandler(int i, pointer blockData, pointer pTimeout, pointer pReadmask)
+SISBlockHandler(ScreenPtr pScreen, pointer pTimeout, pointer pReadmask)
 {
-    ScreenPtr pScreen = screenInfo.screens[i];
-    ScrnInfoPtr pScrn = xf86Screens[i];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     SISPtr pSiS = SISPTR(pScrn);
 
     pScreen->BlockHandler = pSiS->BlockHandler;
-    (*pScreen->BlockHandler) (i, blockData, pTimeout, pReadmask);
+    (*pScreen->BlockHandler) (pScreen, pTimeout, pReadmask);
     pScreen->BlockHandler = SISBlockHandler;
 
 #ifdef SISDUALHEAD
@@ -8794,7 +8796,7 @@ SISBlockHandler(int i, pointer blockData, pointer pTimeout, pointer pReadmask)
 #endif
 
     if(pSiS->AdjustFramePending && pSiS->AdjustFrame) {
-       (*pSiS->AdjustFrame)(i, pSiS->AdjustFrameX, pSiS->AdjustFrameY, pSiS->AdjustFrameFlags);
+       (*pSiS->AdjustFrame)(pScrn, pSiS->AdjustFrameX, pSiS->AdjustFrameY);
        /* Reset it since Xv insists on installing its own every time. */
        pScrn->AdjustFrame = SISNewAdjustFrame;
        pSiS->AdjustFramePending = FALSE;
@@ -9278,7 +9280,7 @@ SISCalculateGammaRampCRT2(ScrnInfoPtr pScrn)
  * depth, bitsPerPixel)
  */
 static Bool
-SISScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+SISScreenInit(ScreenPtr pScreen, int argc, char **argv)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     SISPtr pSiS = SISPTR(pScrn);
@@ -9457,7 +9459,7 @@ SISScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	  pScrn->frameY1 = pScrn->frameY0 + pScrn->currentMode->VDisplay - 1;
        }
     }
-    SISAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    SISAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 
     /* Reset visual list. */
     miClearVisualTypes();
@@ -9653,7 +9655,6 @@ SISScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
     pSiS->SiSFastVidCopyDone = TRUE;
 
-    miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
 
@@ -9889,7 +9890,7 @@ SISScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	     pSiS->SiS_SD_Flags |= SiS_SD_PSEUDOXINERAMA;
 	     if(pSiS->HaveNonRect) {
 		/* Reset the viewport (now eventually non-recangular) */
-		SISAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+		SISAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 	     }
 	  }
        } else {
@@ -10225,9 +10226,8 @@ SiS_CheckModeCRT2(ScrnInfoPtr pScrn, DisplayModePtr mode, unsigned int VBFlags,
 }
 
 static ModeStatus
-SISValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
+SISValidMode(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool verbose, int flags)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr pSiS = SISPTR(pScrn);
 
     if(pSiS->UseVESA) {
@@ -10383,9 +10383,8 @@ SiSResetDPI(ScrnInfoPtr pScrn, Bool force)
 #endif
 
 Bool
-SISSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
+SISSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr pSiS = SISPTR(pScrn);
    /* This is part 2 of the ugly hack in sis_shadow.c:
     * There we set pScrn->currentMode to something
@@ -10401,7 +10400,7 @@ SISSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
     */
 
     if(!pSiS->skipswitchcheck) {
-       if(SISValidMode(scrnIndex, mode, TRUE, flags) != MODE_OK) {
+       if(SISValidMode(pScrn, mode, TRUE, 0) != MODE_OK) {
           return FALSE;
        }
     }
@@ -10416,7 +10415,7 @@ SISSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 
     (*pSiS->SyncAccel)(pScrn);
 
-    if(!(SISModeInit(xf86Screens[scrnIndex], mode)))
+    if(!(SISModeInit(pScrn, mode)))
        return FALSE;
 
     /* Since RandR (indirectly) uses SwitchMode(), we need to
@@ -10533,21 +10532,18 @@ SISAdjustFrameHW_CRT2(ScrnInfoPtr pScrn, int x, int y)
 }
 
 static void
-SISNewAdjustFrame(int scrnIndex, int x, int y, int flags)
+SISNewAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr      pSiS = SISPTR(pScrn);
 
     pSiS->AdjustFramePending = TRUE;
     pSiS->AdjustFrameX = x;
     pSiS->AdjustFrameY = y;
-    pSiS->AdjustFrameFlags = flags;
 }
 
 void
-SISAdjustFrame(int scrnIndex, int x, int y, int flags)
+SISAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr      pSiS = SISPTR(pScrn);
     UChar       temp, cr11backup;
     ULong       base;
@@ -10559,7 +10555,7 @@ SISAdjustFrame(int scrnIndex, int x, int y, int flags)
 
 #ifdef SISMERGED
     if(pSiS->MergedFB) {
-	SISMFBAdjustFrame(scrnIndex, x, y, flags);
+	SISMFBAdjustFrame(pScrn, x, y);
 	return;
     }
 #endif
@@ -10626,9 +10622,8 @@ SISAdjustFrame(int scrnIndex, int x, int y, int flags)
 
 
 static Bool
-SISEnterVT(int scrnIndex, int flags)
+SISEnterVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr pSiS = SISPTR(pScrn);
     SiS_SiSFB_Lock(pScrn, TRUE);
 
@@ -10644,7 +10639,7 @@ SISEnterVT(int scrnIndex, int flags)
     /* No need to go through pScrn->AdjustFrame; Xv's
      * EnterVT handles the overlay(s) anyway.
      */
-    SISAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    SISAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 
 
 /* Mark for 3D full-screen bug */
@@ -10673,15 +10668,14 @@ SISEnterVT(int scrnIndex, int flags)
 
 
 static void
-SISLeaveVT(int scrnIndex, int flags)
+SISLeaveVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr pSiS = SISPTR(pScrn);
 #ifdef SISDRI
     ScreenPtr pScreen;
 
     if(pSiS->directRenderingEnabled) {
-       pScreen = screenInfo.screens[scrnIndex];
+       pScreen = xf86ScreenToScrn(pScrn);
 /* Mark for 3D full-screen bug */
 /*   DRILock(pScreen, 0); */
     }
@@ -10750,9 +10744,9 @@ SISLeaveVT(int scrnIndex, int flags)
 
 
 static Bool
-SISCloseScreen(int scrnIndex, ScreenPtr pScreen)
+SISCloseScreen(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     SISPtr pSiS = SISPTR(pScrn);
 #ifdef SISDUALHEAD
     SISEntPtr pSiSEnt = pSiS->entityPrivate;
@@ -10920,7 +10914,7 @@ SISCloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     pScreen->CloseScreen = pSiS->CloseScreen;
 
-    return(*pScreen->CloseScreen)(scrnIndex, pScreen);
+    return(*pScreen->CloseScreen)(pScreen);
 }
 
 
@@ -10931,10 +10925,9 @@ SISCloseScreen(int scrnIndex, ScreenPtr pScreen)
 /* Free up any per-generation data structures */
 
 static void
-SISFreeScreen(int scrnIndex, int flags)
+SISFreeScreen(ScrnInfoPtr pScrn)
 {
 #ifdef SIS_NEED_MAP_IOP
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     SISPtr pSiS = SISPTR(pScrn);
 
     if(pSiS) {
@@ -10948,7 +10941,7 @@ SISFreeScreen(int scrnIndex, int flags)
     }
 #endif
 
-    SISFreeRec(xf86Screens[scrnIndex]);
+    SISFreeRec(pScrn);
 }
 
 
@@ -11192,7 +11185,7 @@ SISHotkeySwitchCRT2Status(ScrnInfoPtr pScrn,ULong newvbflags,ULong newvbflags3)
    pSiS->VBFlags3 = pSiS->VBFlags_backup3 = newvbflags3;  
  
    pSiS->skipswitchcheck = TRUE;
-   if(!((*pScrn->SwitchMode)(pScrn->scrnIndex,pScrn->currentMode,0)))
+   if(!((*pScrn->SwitchMode)(pScrn,pScrn->currentMode)))
    {
           pSiS->skipswitchcheck = FALSE;
 	  return FALSE;
@@ -11201,7 +11194,7 @@ SISHotkeySwitchCRT2Status(ScrnInfoPtr pScrn,ULong newvbflags,ULong newvbflags3)
 
    /*xf86DrvMsg(0,X_INFO,"frameX0=%d, frameY0=%d.\n",pScrn->frameX0,pScrn->frameY0);*/
 
-   SISAdjustFrame(pScrn->scrnIndex, pScrn->frameX0, pScrn->frameY0,0);
+   SISAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 
    return TRUE;
 
@@ -11262,14 +11255,14 @@ SISHotkeySwitchCRT1Status(ScrnInfoPtr pScrn, int onoff)
  (*pSiS->SyncAccel)(pScrn); 
   
  pSiS->skipswitchcheck = TRUE;
- if(!((*pScrn->SwitchMode)(pScrn->scrnIndex,pScrn->currentMode,0)))
+ if(!((*pScrn->SwitchMode)(pScrn,pScrn->currentMode)))
  {
        pSiS->skipswitchcheck = FALSE;
        return FALSE;
  }
  pSiS->skipswitchcheck = FALSE;
 
- SISAdjustFrame(pScrn->scrnIndex, pScrn->frameX0, pScrn->frameY0,0);
+ SISAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
  
  return TRUE;
 }
@@ -11317,7 +11310,7 @@ SISHotkeySwitchMode(ScrnInfoPtr pScrn, Bool adjust)
    
                xf86ZoomViewport(pScreen,1);
 
-	       SISAdjustFrame(pScrn->scrnIndex,0,0,0);
+	       SISAdjustFrame(pScrn,0,0);
 
    
    return TRUE;
@@ -11326,9 +11319,8 @@ SISHotkeySwitchMode(ScrnInfoPtr pScrn, Bool adjust)
 
 /**************************************************************************/
 static Bool
-SISPMEvent(int scrnIndex, pmEvent event, Bool undo)
+SISPMEvent(ScrnInfoPtr pScrn, pmEvent event, Bool undo)
 {
-  ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
   SISPtr pSiS = SISPTR(pScrn);
   unsigned char hotkeyflag = 0;/*check BIOS flag.*/
   unsigned char checkflag = 0;/*just for test using.*/
@@ -11345,13 +11337,13 @@ SISPMEvent(int scrnIndex, pmEvent event, Bool undo)
          {        
               xf86DrvMsg(0,X_INFO,"PM_EVENT:event=%d,undo=%d.\n",event,undo);		 
 		 if (!undo && !pSiS->suspended) {
-	               pScrn->LeaveVT(scrnIndex, 0);
+	               pScrn->LeaveVT(pScrn);
 	               pSiS->suspended = TRUE;
 	               sleep(0);
                    } 
 		     else if (undo && pSiS->suspended) {
 	            sleep(0);
-	            pScrn->EnterVT(scrnIndex, 0);
+	            pScrn->EnterVT(pScrn);
 	            pSiS->suspended = FALSE;
                   }
 	   }
@@ -11363,7 +11355,7 @@ SISPMEvent(int scrnIndex, pmEvent event, Bool undo)
       {
 	  	  if (pSiS->suspended) {
 	        sleep(0);
-	        pScrn->EnterVT(scrnIndex, 0);
+	        pScrn->EnterVT(pScrn);
 	        pSiS->suspended = FALSE;
 	        SaveScreens(SCREEN_SAVER_FORCER, ScreenSaverReset);
                }

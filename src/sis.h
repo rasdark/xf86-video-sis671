@@ -76,6 +76,7 @@
 #include "xf86Cursor.h"
 #include "xf86cmap.h"
 #include "vbe.h"
+#include "xf86fbman.h"
 
 /*I.L. modified*/
 #include "sispcirename.h" 
@@ -250,7 +251,7 @@
 #define SIS_MAX_SUBPICTURES 2
 
 #if !defined(SIS_USE_XAA) && !defined(SIS_USE_EXA)
-#define SIS_USE_XAA
+#define SIS_USE_EXA
 #endif
 
 #ifdef SIS_USE_XAA
@@ -1003,9 +1004,8 @@ typedef struct {
     struct pci_device *PciInfo;
 #else
     pciVideoPtr		PciInfo;
+    CARD32              PciTag;
 #endif
-    
-    CARD32		PciTag;
 
     int			PciBus, PciDevice, PciFunc;
     EntityInfoPtr	pEnt;
@@ -1286,8 +1286,8 @@ typedef struct {
 #ifdef SIS_USE_XAA
     void		(*RenderCallback)(ScrnInfoPtr);
     Time		RenderTime;
-    FBLinearPtr		AccelLinearScratch;
 #endif
+    FBLinearPtr		AccelLinearScratch;
 #ifdef SIS_USE_EXA
     void		(*ExaRenderCallback)(ScrnInfoPtr);
     Time		ExaRenderTime;
@@ -1309,7 +1309,7 @@ typedef struct {
     int			SiSDPIVX, SiSDPIVY;
     int			virtualX, virtualY;
     int			Rotate, Reflect;
-    void		(*PointerMoved)(int index, int x, int y);
+    void		(*PointerMoved)(ScrnInfoPtr pScrn, int x, int y);
 
     /* ShadowFB support */
     Bool		ShadowFB;
@@ -1387,7 +1387,6 @@ typedef struct {
     Bool		AdjustFramePending;
     int			AdjustFrameX;
     int			AdjustFrameY;
-    int			AdjustFrameFlags;
 
     /* DGA */
     DGAModePtr		DGAModes;

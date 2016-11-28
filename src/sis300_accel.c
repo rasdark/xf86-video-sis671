@@ -1284,8 +1284,8 @@ SiS300AccelInit(ScreenPtr pScreen)
 		 /* Composite not supported */
 
 		 /* Upload, download to/from Screen */
-		 pSiS->EXADriverPtr->accel.UploadToScreen = SiSUploadToScreen;
-		 pSiS->EXADriverPtr->accel.DownloadFromScreen = SiSDownloadFromScreen;
+		 //pSiS->EXADriverPtr->accel.UploadToScreen = SiSUploadToScreen;
+		 //pSiS->EXADriverPtr->accel.DownloadFromScreen = SiSDownloadFromScreen;
 	   }
 #else  /*xorg>7.0*/
 	   
@@ -1332,8 +1332,8 @@ SiS300AccelInit(ScreenPtr pScreen)
 		 /* Composite not supported */
 
 		 /* Upload, download to/from Screen */
-		 pSiS->EXADriverPtr->UploadToScreen = SiSUploadToScreen;
-		 pSiS->EXADriverPtr->DownloadFromScreen = SiSDownloadFromScreen;
+		 //pSiS->EXADriverPtr->UploadToScreen = SiSUploadToScreen;
+		 //pSiS->EXADriverPtr->DownloadFromScreen = SiSDownloadFromScreen;
 
 	      } 
 #endif

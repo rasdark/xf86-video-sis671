@@ -67,7 +67,7 @@
 #endif
 
 #if 1
-#define SIS_USE_XAA		/* Include support for XAA */
+#undef SIS_USE_XAA		/* Don't include support for XAA, current xorg servers don't support it */
 #endif
 
 #ifdef SISVRAMQ

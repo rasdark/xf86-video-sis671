@@ -862,8 +862,8 @@ SiSAccelInit(ScreenPtr pScreen)
 	  /* Composite not supported */
 
 	  /* Upload, download to/from Screen */
-	  pSiS->EXADriverPtr->UploadToScreen = SiSUploadToScreen;
-	  pSiS->EXADriverPtr->DownloadFromScreen = SiSDownloadFromScreen;
+	  //pSiS->EXADriverPtr->UploadToScreen = SiSUploadToScreen;
+	  //pSiS->EXADriverPtr->DownloadFromScreen = SiSDownloadFromScreen;
 
 #endif  /*end of Xorg>=7.0 EXA Setting*/       
        }

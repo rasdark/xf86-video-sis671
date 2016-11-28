@@ -64,10 +64,10 @@
 static inline int
 dixLookupWindow(WindowPtr *pWin, XID id, ClientPtr client, Mask access)
 {
-	*pWin = LookupWindow(id, client);
-	if (!*pWin)
-	return BadWindow;
-	return Success;
+       *pWin = LookupWindow(id, client);
+       if (!*pWin)
+       return BadWindow;
+       return Success;
 }
 #endif
 
@@ -1522,22 +1522,9 @@ SISMFBPointerMoved(int scrnIndex, int x, int y)
 	  }
        }
        if(doit) {
-	  sigstate = xf86BlockSIGIO();
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 15
-           {
-		double dx = x, dy = y;
-		miPointerSetPosition(inputInfo.pointer, Absolute, &dx, &dy);
-		x = (int)dx;
-		y = (int)dy;
-	   }
-#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 13
-	  miPointerSetPosition(inputInfo.pointer, Absolute, x, y);
-#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 5
-	  miPointerSetPosition(inputInfo.pointer, x, y);
-#else
 	  UpdateCurrentTime();
+	  sigstate = xf86BlockSIGIO();
 	  miPointerAbsoluteCursor(x, y, currentTime.milliseconds);
-#endif
 	  xf86UnblockSIGIO(sigstate);
 	  return;
        }
@@ -1743,7 +1730,7 @@ SISMFBPointerMoved(int scrnIndex, int x, int y)
        /* Need to go the official way to avoid hw access and
         * to update Xv's overlays
         */
-       (pScrn1->AdjustFrame)(scrnIndex, pScrn1->frameX0, pScrn1->frameY0, 0);
+       (pScrn1->AdjustFrame)(pScrn1, pScrn1->frameX0, pScrn1->frameY0);
     }
 }
 
@@ -2525,12 +2512,12 @@ SiSProcXineramaGetState(ClientPtr client)
     WindowPtr			pWin;
     xPanoramiXGetStateReply	rep;
     register int		n;
-    int				rc;
+    int                         rc;
 
     REQUEST_SIZE_MATCH(xPanoramiXGetStateReq);
     rc = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
     if (rc != Success)
-        return rc;
+       return rc;
 
     rep.type = X_Reply;
     rep.length = 0;
@@ -2552,12 +2539,10 @@ SiSProcXineramaGetScreenCount(ClientPtr client)
     WindowPtr				pWin;
     xPanoramiXGetScreenCountReply	rep;
     register int			n;
-    int					rc;
 
     REQUEST_SIZE_MATCH(xPanoramiXGetScreenCountReq);
-    rc = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
-    if (rc != Success)
-        return rc;
+    if(Success != dixLookupWindow(&pWin, stuff->window, client, DixReadAccess))
+      return BadWindow;
 
     rep.type = X_Reply;
     rep.length = 0;
@@ -2579,12 +2564,10 @@ SiSProcXineramaGetScreenSize(ClientPtr client)
     WindowPtr				pWin;
     xPanoramiXGetScreenSizeReply	rep;
     register int			n;
-    int					rc;
 
     REQUEST_SIZE_MATCH(xPanoramiXGetScreenSizeReq);
-    rc = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
-    if (rc != Success)
-        return rc;
+    if(Success != dixLookupWindow(&pWin, stuff->window, client, DixReadAccess))
+      return BadWindow;
 
     rep.type = X_Reply;
     rep.length = 0;
@@ -2674,26 +2657,21 @@ SiSProcXineramaSelectInput(ClientPtr client)
     int lookup_ret;
 
     REQUEST_SIZE_MATCH(xXineramaSelectInputReq);
-    /*IvansLee define NEW_XORG_VERSION.*/
-    #if NEW_XORG_VERSION == 1
-    pWin = SecurityLookupWindow(stuff->window,client,DixWriteAccess);
-    #else
-    pWin = SecurityLookupWindow(stuff->window,client,SecurityWriteAccess);
-    #endif
-    
-    if(!pWin)
-       return BadWindow;
+    int rc = dixLookupWindow(&pWin, stuff->window, client, DixWriteAccess);
+    if (rc != Success)
+      return BadWindow;
+
     #if NEW_XORG_VERSION == 1 /*New Xorg Version >= 1.4 */
-	 lookup_ret = dixLookupResourceByType((pointer) &pHead, 
-						 pWin->drawable.id, EventType, 
-						 client, DixWriteAccess);
-	 pHead = (lookup_ret == Success ? pHead : NULL);
+        lookup_ret = dixLookupResourceByType((pointer) &pHead,
+                                                pWin->drawable.id, EventType,
+                                                client, DixWriteAccess);
+        pHead = (lookup_ret == Success ? pHead : NULL);
     #else
       pHead = (SiSXineramaEventPtr *)SecurityLookupIDByType(client,
                                                  pWin->drawable.id, EventType,
                                                  SecurityWriteAccess);
     #endif
- 
+
     if(stuff->enable & (XineramaLayoutChangeNotifyMask)) {
 
        /* Check for existing entry */

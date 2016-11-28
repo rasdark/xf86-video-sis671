@@ -61,8 +61,10 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xf86xvmc.h"
 #include <X11/extensions/Xv.h>
 #include <X11/extensions/XvMC.h>
+#ifdef SIS_USE_XAA
 #include "xaa.h"
 #include "xaalocal.h"
+#endif
 #include "dixstruct.h"
 #include "fourcc.h"
 #include "sis_common.h"

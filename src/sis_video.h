@@ -107,10 +107,13 @@ static void 	SISQueryBestSize(ScrnInfoPtr, Bool, short, short, short,
 			short, unsigned int *,unsigned int *, pointer);
 static int 	SISPutImage(ScrnInfoPtr,
 			short, short, short, short, short, short, short, short,
-			int, UChar *, short, short, Bool, RegionPtr, pointer);
+			int, UChar *, short, short, Bool, RegionPtr, pointer, DrawablePtr);
 static int	SISReputImage(ScrnInfoPtr pScrn,
+			short src_x, short src_y,
 			short drw_x, short drw_y,
-			RegionPtr clipBoxes, pointer data);
+			short src_w, short src_h,
+			short drw_w, short drw_h,
+			RegionPtr clipBoxes, pointer data, DrawablePtr pDraw);
 static int 	SISQueryImageAttributes(ScrnInfoPtr,
 			int, UShort *, UShort *, int *, int *);
 static void 	SISVideoTimerCallback(ScrnInfoPtr pScrn, Time now);
