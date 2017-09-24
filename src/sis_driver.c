@@ -8773,13 +8773,13 @@ SISModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 /*******************************************************/
 
 static void
-SISBlockHandler(ScreenPtr pScreen, pointer pTimeout, pointer pReadmask)
+SISBlockHandler(ScreenPtr pScreen, pointer pTimeout)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     SISPtr pSiS = SISPTR(pScrn);
 
     pScreen->BlockHandler = pSiS->BlockHandler;
-    (*pScreen->BlockHandler) (pScreen, pTimeout, pReadmask);
+    (*pScreen->BlockHandler) (pScreen, pTimeout);
     pScreen->BlockHandler = SISBlockHandler;
 
 #ifdef SISDUALHEAD
