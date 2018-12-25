@@ -3021,7 +3021,7 @@ SiSPrintModes(ScrnInfoPtr pScrn, Bool printfreq)
     float hsync, refresh = 0.0;
     char *desc, *desc2, *prefix, *uprefix, *output;
 
-    xf86DrvMsg(pScrn->scrnIndex, pScrn->virtualFrom, "Virtual size is %dx%d (pitch %d)\n",
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Virtual size is %dx%d (pitch %d)\n",
 	       pScrn->virtualX, pScrn->virtualY, pScrn->displayWidth);
 
     if((p = pScrn->modes) == NULL) return;
