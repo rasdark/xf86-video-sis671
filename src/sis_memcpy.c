@@ -860,36 +860,40 @@ static void sigill_handler(void)
 }
 #endif
 
+void __cpuid(int* cpuinfo, int info)
+{
+    __asm__ __volatile__(
+	"xchg %%ebx, %%edi;"
+	"cpuid;"
+	"xchg %%ebx, %%edi;"
+	:"=a" (cpuinfo[0]), "=D" (cpuinfo[1]), "=c" (cpuinfo[2]), "=d" (cpuinfo[3])
+	:"0" (info)
+    );
+}
+
+
 static Bool CheckOSforSSE(ScrnInfoPtr pScrn)
 {
 #ifdef SISCHECKOSSSE  /* Check OS for SSE possible: */
-    int signo = -1;
 
 #ifdef SISDGBMC
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Checking OS SSE support\n");
 #endif
-
-    xf86InterceptSigIll(&sigill_handler);
-
-   	 if(setjmp(sigill_return) ) {
-    	   signo = 4;
-   	 } else {
-     	  __asm__ __volatile__ (" xorps %xmm0, %xmm0\n");
-     	  /* __asm__ __volatile__ (" .byte 0xff\n"); */  /* For test */
-    }
-
-    xf86InterceptSigIll(NULL);
+    Bool sseSupported = FALSE;
+    int cpuinfo[4];
+    __cpuid(cpuinfo, 1);
+    sseSupported = cpuinfo[3] & (1 << 25) || FALSE;
 
 #ifdef SISDGBMC
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "OS SSE support signal %d\n", signo);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "OS SSE support signal %d\n", sseSupported);
 #endif
 
-    if(signo != -1) {
+    if(!sseSupported) {
        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
 		"OS does not support SSE instructions\n");
     }
 
-    return (signo >= 0) ? FALSE : TRUE;
+    return sseSupported;
 
 #else  /* no check for SSE possible: */
 
