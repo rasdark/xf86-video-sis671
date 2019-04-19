@@ -143,7 +143,7 @@ static int pix24bpp = 0;
  * an upper-case version of the driver name.
  */
 
-#if XSERVER_LIBPCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 #define SIS_DEVICE_MATCH(d, i)\
     {PCI_VENDOR_SIS, (d), PCI_MATCH_ANY, PCI_MATCH_ANY, 0, 0, (i) }
 
@@ -161,10 +161,10 @@ DriverRec SIS = {
     SIS_CURRENT_VERSION,
     SIS_DRIVER_NAME,
     SISIdentify,
-#if XSERVER_LIBPCIACCESS
-    NULL,
-#else
+#ifndef XSERVER_LIBPCIACCESS
     SISProbe,
+#else
+    NULL,
 #endif
     SISAvailableOptions,
     NULL,
@@ -173,7 +173,7 @@ DriverRec SIS = {
      ,
     SISDriverFunc
 #endif
-#if XSERVER_LIBPCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
     ,
     SIS_device_match,
     SIS_pci_probe
@@ -1278,26 +1278,17 @@ SiSReadROM(ScrnInfoPtr pScrn)
 			      break;
 	     }
 
-#if XSERVER_LIBPCIACCESS
 	     if(readpci) {
 	       pSiS->PciInfo->rom_size = biossize;
+#ifndef XSERVER_LIBPCIACCESS
+               xf86ReadPciBIOS(0, pSiS->PciTag, 0, pSiS->BIOS, biossize);
+#else
 	       pci_device_read_rom(pSiS->PciInfo, pSiS->BIOS);
+#endif
 	       if(SISCheckBIOS(pSiS, mypciid, mypcivendor, biossize)) {
                  found = TRUE;
                }
              }
-#else
-
-	     if(readpci) {
-#ifndef XSERVER_LIBPCIACCESS
-		xf86ReadPciBIOS(0, pSiS->PciTag, 0, pSiS->BIOS, biossize);
-#else
-		pci_device_read_rom(pSiS->PciInfo, pSiS->BIOS);
-#endif
-		if(SISCheckBIOS(pSiS, mypciid, mypcivendor, biossize)) {
-		   found = TRUE;
-		}
-	     }
 
 	     if(!found) {
 		ULong segstart;
@@ -1319,8 +1310,6 @@ SiSReadROM(ScrnInfoPtr pScrn)
 		   break;
 		}
              }
-
-#endif
 
 	     if(found) {
 		UShort romptr = pSiS->BIOS[0x16] | (pSiS->BIOS[0x17] << 8);
@@ -6030,10 +6019,10 @@ SISUnmapIOPMem(ScrnInfoPtr pScrn)
         if(pSiSEnt->MapCountIOPBase) {
 	    pSiSEnt->MapCountIOPBase--;
 	    if((pSiSEnt->MapCountIOPBase == 0) || (pSiSEnt->forceUnmapIOPBase)) {
-#if XSERVER_LIBPCIACCESS
-                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->IOPBase, 2048);
-#else
+#ifndef XSERVER_LIBPCIACCESS
                 xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiSEnt->IOPBase, 2048);
+#else
+                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->IOPBase, 2048);
 #endif
 		pSiSEnt->IOPBase = NULL;
 		pSiSEnt->MapCountIOPBase = 0;
@@ -6043,10 +6032,10 @@ SISUnmapIOPMem(ScrnInfoPtr pScrn)
 	}
     } else {
 #endif
-#if XSERVER_LIBPCIACCESS
-        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->IOPBase, 2048);
-#else
+#ifndef XSERVER_LIBPCIACCESS
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiS->IOPBase, 2048);
+#else
+        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->IOPBase, 2048);
 #endif
 	pSiS->IOPBase = NULL;
 #ifdef SISDUALHEAD
@@ -6274,10 +6263,10 @@ SISUnmapMem(ScrnInfoPtr pScrn)
         if(pSiSEnt->MapCountIOBase) {
 	    pSiSEnt->MapCountIOBase--;
 	    if((pSiSEnt->MapCountIOBase == 0) || (pSiSEnt->forceUnmapIOBase)) {
-#if XSERVER_LIBPCIACCESS
-                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->IOBase, (pSiS->mmioSize * 1024));
-#else
+#ifndef XSERVER_LIBPCIACCESS
 		xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiSEnt->IOBase, (pSiS->mmioSize * 1024));
+#else
+                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->IOBase, (pSiS->mmioSize * 1024));
 #endif
 		pSiSEnt->IOBase = NULL;
 		pSiSEnt->MapCountIOBase = 0;
@@ -6289,10 +6278,10 @@ SISUnmapMem(ScrnInfoPtr pScrn)
 	if(pSiSEnt->MapCountIOBaseDense) {
 	    pSiSEnt->MapCountIOBaseDense--;
 	    if((pSiSEnt->MapCountIOBaseDense == 0) || (pSiSEnt->forceUnmapIOBaseDense)) {
-#if XSERVER_LIBPCIACCESS
-                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->IOBaseDense, (pSiS->mmioSize * 1024));
-#else
+#ifndef XSERVER_LIBPCIACCESS
 		xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiSEnt->IOBaseDense, (pSiS->mmioSize * 1024));
+#else
+                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->IOBaseDense, (pSiS->mmioSize * 1024));
 #endif
 		pSiSEnt->IOBaseDense = NULL;
 		pSiSEnt->MapCountIOBaseDense = 0;
@@ -6304,10 +6293,10 @@ SISUnmapMem(ScrnInfoPtr pScrn)
 	if(pSiSEnt->MapCountFbBase) {
 	    pSiSEnt->MapCountFbBase--;
 	    if((pSiSEnt->MapCountFbBase == 0) || (pSiSEnt->forceUnmapFbBase)) {
-#if XSERVER_LIBPCIACCESS
-                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->RealFbBase, pSiS->FbMapSize);
-#else
+#ifndef XSERVER_LIBPCIACCESS
 		xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiSEnt->RealFbBase, pSiS->FbMapSize);
+#else
+                (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiSEnt->RealFbBase, pSiS->FbMapSize);
 #endif
 		pSiSEnt->FbBase = pSiSEnt->RealFbBase = NULL;
 		pSiSEnt->MapCountFbBase = 0;
@@ -6318,24 +6307,24 @@ SISUnmapMem(ScrnInfoPtr pScrn)
 	}
     } else {
 #endif
-#if XSERVER_LIBPCIACCESS
-        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->IOBase, (pSiS->mmioSize * 1024));
-#else
+#ifndef XSERVER_LIBPCIACCESS
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiS->IOBase, (pSiS->mmioSize * 1024));
+#else
+        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->IOBase, (pSiS->mmioSize * 1024));
 #endif
 	pSiS->IOBase = NULL;
 #ifdef __alpha__
-#if XSERVER_LIBPCIACCESS
-        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->IOBaseDense, (pSiS->mmioSize * 1024));
-#else
+#ifndef XSERVER_LIBPCIACCESS
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiS->IOBaseDense, (pSiS->mmioSize * 1024));
+#else
+        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->IOBaseDense, (pSiS->mmioSize * 1024));
 #endif
 	pSiS->IOBaseDense = NULL;
 #endif
-#if XSERVER_LIBPCIACCESS
-        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->RealFbBase, pSiS->FbMapSize);
-#else
+#ifndef XSERVER_LIBPCIACCESS
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pSiS->RealFbBase, pSiS->FbMapSize);
+#else
+        (void) pci_device_unmap_legacy(pSiS->PciInfo, (pointer)pSiS->RealFbBase, pSiS->FbMapSize);
 #endif
 	pSiS->FbBase = pSiS->RealFbBase = NULL;
 #ifdef SISDUALHEAD
@@ -10982,10 +10971,10 @@ SiS_GetSetBIOSScratch(ScrnInfoPtr pScrn, UShort offset, UChar value)
 #ifdef SIS_USE_BIOS_SCRATCH
     if(SISPTR(pScrn)->Primary) {
 
-#if XSERVER_LIBPCIACCESS
-       (void) pci_device_map_legacy(SISPTR(pScrn)->PciInfo, 0, 0x2000, 1, &base); // HA HA HA MAGIC NUMBER
-#else
+#ifndef XSERVER_LIBPCIACCESS
        base = xf86MapVidMem(pScrn->scrnIndex, VIDMEM_MMIO, 0, 0x2000);
+#else
+       (void) pci_device_map_legacy(SISPTR(pScrn)->PciInfo, 0, 0x2000, 1, &base); // HA HA HA MAGIC NUMBER
 #endif
 
        if(!base) {
@@ -11000,10 +10989,10 @@ SiS_GetSetBIOSScratch(ScrnInfoPtr pScrn, UShort offset, UChar value)
           *(base + offset) = value;
        }
 
-#if XSERVER_LIBPCIACCESS
-       (void) pci_device_unmap_legacy(SISPTR(pScrn)->PciInfo, base, 0x2000);
-#else
+#ifndef XSERVER_LIBPCIACCESS
        xf86UnMapVidMem(pScrn->scrnIndex, base, 0x2000);
+#else
+       (void) pci_device_unmap_legacy(SISPTR(pScrn)->PciInfo, base, 0x2000);
 #endif
     }
 #endif
