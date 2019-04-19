@@ -1739,12 +1739,12 @@ SiSVGAMapMem(ScrnInfoPtr pScrn)
     if(pSiS->VGAMapPhys == 0) pSiS->VGAMapPhys = 0xA0000;
 
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,3,0,0,0)
-#if XSERVER_LIBPCIACCESS
-    (void) pci_device_map_legacy(pSiS->PciInfo, pSiS->VGAMapPhys, pSiS->VGAMapSize,
-                                 PCI_DEV_MAP_FLAG_WRITABLE, &pSiS->VGAMemBase);
-#else
+#ifndef XSERVER_LIBPCIACCESS
     pSiS->VGAMemBase = xf86MapDomainMemory(pScrn->scrnIndex, VIDMEM_MMIO_32BIT,
 			pSiS->PciTag, pSiS->VGAMapPhys, pSiS->VGAMapSize);
+#else
+    (void) pci_device_map_legacy(pSiS->PciInfo, pSiS->VGAMapPhys, pSiS->VGAMapSize,
+                                 PCI_DEV_MAP_FLAG_WRITABLE, &pSiS->VGAMemBase);
 #endif
 #else
     pSiS->VGAMemBase = xf86MapVidMem(pScrn->scrnIndex, VIDMEM_MMIO_32BIT,
@@ -1761,10 +1761,10 @@ SiSVGAUnmapMem(ScrnInfoPtr pScrn)
 
     if(pSiS->VGAMemBase == NULL) return;
 
-#if XSERVER_LIBPCIACCESS
-    (void) pci_device_unmap_legacy(pSiS->PciInfo, pSiS->VGAMemBase, pSiS->VGAMapSize);
-#else
+#ifndef XSERVER_LIBPCIACCESS
     xf86UnMapVidMem(pScrn->scrnIndex, pSiS->VGAMemBase, pSiS->VGAMapSize);
+#else
+    (void) pci_device_unmap_legacy(pSiS->PciInfo, pSiS->VGAMemBase, pSiS->VGAMapSize);
 #endif
 
     pSiS->VGAMemBase = NULL;

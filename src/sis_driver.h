@@ -779,7 +779,7 @@ static Bool SISSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode);
 static void SISNewAdjustFrame(ScrnInfoPtr pScrn, int x, int y);
 static Bool SISPMEvent(ScrnInfoPtr pScrn, pmEvent event, Bool undo);/*APM-ACPI, adding by Ivans.*/
 
-#if XSERVER_LIBPCIACCESS
+#ifdef XSERVER_LIBPCIACCESS
 static Bool SIS_pci_probe(DriverPtr driver, int entity_num, struct pci_device *device, intptr_t match_data);
 #endif
 /* ACPI Device Switch functions */
