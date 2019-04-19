@@ -5,7 +5,7 @@ adapted by rasdark (andrew.senik@gmail.com)
 
 For xorg-1.12 just clone and:
 ```
-git checkout for-xorg-1.12
+git checkout for-xorg-1.12-1
 ```
 
 For xorg-1.18 just clone and:
