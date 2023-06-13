@@ -3480,6 +3480,11 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Relocated I/O registers at 0x%lX\n",
            (ULong)pSiS->RelIO);
 
+    /* Request permissions to interact with IO registers */
+    if (ioperm(pSiS->RelIO, 0x5B, 1)) {
+       xf86DrvMsg(pSiS->pScrn->scrnIndex, X_WARNING, "Failed to obtain I/O permissions\n");
+    }
+
     /* Unlock extended registers */
     sisSaveUnlockExtRegisterLock(pSiS, &srlockReg, &crlockReg);
 
