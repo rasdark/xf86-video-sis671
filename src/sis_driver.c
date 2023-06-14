@@ -3481,7 +3481,7 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
            (ULong)pSiS->RelIO);
 
     /* Request permissions to interact with IO registers */
-    if (ioperm(pSiS->RelIO, 0x5B, 1)) {
+    if (ioperm(pSiS->RelIO, 328, 1)) {
        xf86DrvMsg(pSiS->pScrn->scrnIndex, X_WARNING, "Failed to obtain I/O permissions\n");
     }
 
