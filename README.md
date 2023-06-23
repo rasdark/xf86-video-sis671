@@ -1,4 +1,4 @@
-**Now work in xorg-1.19!!!**
+**Now work in xorg-21.1!!!**
 
 This version based on Archers yaourt sisimedia-0.10.3 pathed for use with xorg-server version > 1.12
 adapted by rasdark (andrew.senik@gmail.com)
@@ -17,6 +17,53 @@ For xorg-1.19 just clone and:
 ```
 git checkout for-xorg-1.19
 ```
+
+For xorg-1.20 just clone and:
+```
+git checkout for-xorg-1.20
+```
+
+For xorg-21.1 just clone and:
+```
+git checkout for-xorg-21.1
+```
+
+---
+
+Installation on debian-based distros:
+
+1. Install dependencies:
+```
+sudo apt install git build-essential autoconf make libx11-dev xorg-dev xutils-dev libtool -y
+```
+
+2. Clone and select version:
+```
+git clone https://github.com/rasdark/xf86-video-sis671
+cd xf86-video-sis671
+# replace {YOUR_XORG_VERSION} with your xorg version
+git checkout for-xorg-{YOUR_XORG_VERSION}
+```
+
+3. Compile:
+```
+autoreconf -vi
+./configure --prefix=/usr --disable-static
+make
+```
+
+4. Install:
+```
+sudo make install
+```
+
+5. Create config:
+```
+sudo X :0 -configure
+sudo mv /root/xorg.conf.new /etc/X11/xorg.conf
+```
+
+---
 
 in my gentoo box work with:
 ```
