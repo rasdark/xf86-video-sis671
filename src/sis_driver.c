@@ -8288,7 +8288,7 @@ SiSPostSetMode(ScrnInfoPtr pScrn, SISRegPtr sisReg)
        }
        if(pSiSEnt->pScrn_2) {
 	  if(SISPTR(pSiSEnt->pScrn_2)->ResetXvDisplay) {
-	     (SISPTR(pSiSEnt->pScrn_1)->ResetXvDisplay)(pSiSEnt->pScrn_2);
+	     (SISPTR(pSiSEnt->pScrn_2)->ResetXvDisplay)(pSiSEnt->pScrn_2);
 	  }
 	  SISPTR(pSiSEnt->pScrn_2)->CRT1MonGamma = pSiS->CRT1MonGamma;
 	  SISPTR(pSiSEnt->pScrn_2)->CRT2MonGamma = pSiS->CRT2MonGamma;
