@@ -39,23 +39,9 @@
 
 extern unsigned int SISAllocateFBMemory(ScrnInfoPtr pScrn, void **handle, int bytesize);
 extern void	    SISFreeFBMemory(ScrnInfoPtr pScrn, void **handle);
-#if defined(_SC_LEVEL1_DCACHE_LINE)
-#define CPUBUFFERSIZE   sysconf(_SC_LEVEL1_DCACHE_LINESIZE)       /* Size of /proc/cpuinfo buffer */
-#else
-size_t get_cache_l1_size()
-{
-    FILE * p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
-    unsigned int i = 0;
-    if (p) {
-        fscanf(p, "%d", &i);
-        fclose(p);
-    }
-    return i;
-}
 
-#define CPUBUFFERSIZE get_cache_l1_size()
-#endif
-#define BUFFERSIZE      (576 * 1152)                              /* Matches 720x576 YUV420 */
+#define CPUBUFFERSIZE 2048       /* Size of /proc/cpuinfo buffer */
+#define BUFFERSIZE (576 * 1152)  /* Matches 720x576 YUV420 */
 
 /************************************************************************/
 /*                   arch specific memcpy() routines                    */
