@@ -128,9 +128,9 @@ static const SiS_LCD_StStruct SiS661_LCD_Type[]=
  */
 typedef struct _SiSTVVScale {
         UShort ScaleVDE;
-	int sindex;
 	UShort RealVDE;
 	UShort reg[4];
+    int sindex;
 } MySiSTVVScale, *MySiSTVVScalePtr;
 
 static const MySiSTVVScale SiSTVVScale[] = {

@@ -109,8 +109,8 @@ struct SiS_CHTVRegData {
 };
 
 struct SiS_St {
+    unsigned short St_ModeFlag;
 	unsigned char  St_ModeID;
-	unsigned short St_ModeFlag;
 	unsigned char  St_StTableIndex;
 	unsigned char  St_CRT2CRTC;
 	unsigned char  St_ResInfo;
@@ -144,9 +144,9 @@ struct SiS_StandTable_S {
 };
 
 struct SiS_Ext {
+    unsigned short Ext_ModeFlag;
+    unsigned short Ext_VESAID;
 	unsigned char  Ext_ModeID;
-	unsigned short Ext_ModeFlag;
-	unsigned short Ext_VESAID;
 	unsigned char  Ext_RESINFO;
 	unsigned char  VB_ExtTVFlickerIndex;
 	unsigned char  VB_ExtTVEdgeIndex;
@@ -157,14 +157,14 @@ struct SiS_Ext {
 };
 
 struct SiS_Ext2 {
+    unsigned short XRes;
+    unsigned short YRes;
 	unsigned short Ext_InfoFlag;
 	unsigned char  Ext_CRT1CRTC;
 	unsigned char  Ext_CRTVCLK;
 	unsigned char  Ext_CRT2CRTC;
 	unsigned char  Ext_CRT2CRTC_NS;
 	unsigned char  ModeID;
-	unsigned short XRes;
-	unsigned short YRes;
 	unsigned char  Ext_PDC;
 	unsigned char  Ext_FakeCRT2CRTC;
 	unsigned char  Ext_FakeCRT2Clk;

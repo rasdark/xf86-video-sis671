@@ -408,6 +408,8 @@ static XF86ImageRec SISImages[NUM_IMAGES_330] =
 
 
 typedef struct {
+    DisplayModePtr  currentmode;
+
     int pixelFormat;
 
     CARD16  pitch;
@@ -435,8 +437,6 @@ typedef struct {
     CARD16  SCREENheight;
 
     CARD16  lineBufSize;
-
-    DisplayModePtr  currentmode;
 
 #ifdef SISMERGED
     CARD16  pitch2;
@@ -474,7 +474,7 @@ typedef struct {
 
     CARD16  oldLine, oldtop;
 
-    CARD8   (*VBlankActiveFunc)(SISPtr, SISPortPrivPtr);  
+    CARD8   (*VBlankActiveFunc)(SISPtr, SISPortPrivPtr);
 #if 0
     CARD32  (*GetScanLineFunc)(SISPtr pSiS);
 #endif
