@@ -913,7 +913,7 @@ SiSMFBInitMergedFB(ScrnInfoPtr pScrn)
        } else {
 
 	  SISErrorLog(pScrn, "Failed to allocate memory for CRT2 monitor, MergedFB mode disabled.\n");
-	  if(pSiS->CRT2pScrn) free(pSiS->CRT2pScrn);
+	  free(pSiS->CRT2pScrn);
 	  pSiS->CRT2pScrn = NULL;
 	  pSiS->MergedFB = FALSE;
 

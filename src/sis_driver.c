@@ -594,8 +594,8 @@ xf86DrvMsg(0, X_INFO, "SISProbe - test2\n");
 
     }
 
-    if(usedChipsSiS) free(usedChipsSiS);
-    if(usedChipsXGI) free(usedChipsXGI);
+    free(usedChipsSiS);
+    free(usedChipsXGI);
 xf86DrvMsg(0, X_INFO, "SISProbe end\n");
     return foundScreen;
 }
@@ -658,16 +658,13 @@ SISFreeRec(ScrnInfoPtr pScrn)
 	   * and we need the BIOS image and SiS_Private for the first
 	   * head.
 	   */
-	  if(pSiSEnt->BIOS)
-	     free(pSiSEnt->BIOS);
+	  free(pSiSEnt->BIOS);
 	  pSiSEnt->BIOS = pSiS->BIOS = NULL;
 
-	  if(pSiSEnt->SiS_Pr)
-	     free(pSiSEnt->SiS_Pr);
+      free(pSiSEnt->SiS_Pr);
 	  pSiSEnt->SiS_Pr = pSiS->SiS_Pr = NULL;
 
-	  if(pSiSEnt->RenderAccelArray)
-	     free(pSiSEnt->RenderAccelArray);
+      free(pSiSEnt->RenderAccelArray);
 	  pSiSEnt->RenderAccelArray = pSiS->RenderAccelArray = NULL;
 
 	  pSiSEnt->pScrn_1 = NULL;
@@ -733,9 +730,7 @@ SISFreeRec(ScrnInfoPtr pScrn)
 	     pScrn->currentMode = pScrn->modes;
 	     do {
 	        DisplayModePtr p = pScrn->currentMode->next;
-	        if(pScrn->currentMode->Private)
 	 	   free(pScrn->currentMode->Private);
-	 	if(pScrn->currentMode->name)
 	 	   free(pScrn->currentMode->name);
 	        free(pScrn->currentMode);
 	        pScrn->currentMode = p;
@@ -5301,7 +5296,7 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
 	     } else {
 		SISErrorLog(pScrn, mergednocrt1, mergeddisstr);
 	     }
-	     if(pSiS->CRT2pScrn) free(pSiS->CRT2pScrn);
+	     free(pSiS->CRT2pScrn);
 	     pSiS->CRT2pScrn = NULL;
 	     pSiS->MergedFB = FALSE;
 	  }
@@ -5350,7 +5345,7 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
 	   } else {
 	      SISErrorLog(pScrn, mergednocrt2, mergeddisstr);
 	   }
-	   if(pSiS->CRT2pScrn) free(pSiS->CRT2pScrn);
+	   free(pSiS->CRT2pScrn);
 	   pSiS->CRT2pScrn = NULL;
 	   pSiS->MergedFB = FALSE;
 	}
