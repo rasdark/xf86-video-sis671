@@ -254,6 +254,9 @@ SISInitVisualConfigs(ScreenPtr pScreen)
     if(i != numConfigs) {
        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		"[dri] Incorrect initialization of visuals. Disabling the DRI.\n");
+        free(pConfigs);
+        free(pSISConfigs);
+        free(pSISConfigPtrs);
        return FALSE;
     }
     break;
