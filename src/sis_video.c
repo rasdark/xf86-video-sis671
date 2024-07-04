@@ -4982,7 +4982,7 @@ SISPutImageBlit(
 		src_x, src_y, src_w, src_h, drw_x, drw_y, drw_w, drw_h, width, height);
 #endif
 
-   if(index > NUM_BLIT_PORTS)
+   if(index >= NUM_BLIT_PORTS)
       return BadMatch;
 
    if(!height || !width)
