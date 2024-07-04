@@ -484,7 +484,7 @@ void SISLCDPreInit(ScrnInfoPtr pScrn, Bool quiet)
 	     }
 	  }
 	  /*1366x768x60Hz,jump out VB_LCD_CUSTOM, we must clean current CR36. Ivans@090109*/
-          if(pSiS->EnablePanel_1366x768 && ((CR36 & 0x0f == 0x0f))){
+          if(pSiS->EnablePanel_1366x768 && (((CR36 & 0x0f) == 0x0f))){
 	     CR36 &= 0xf0;
 	  }
 	  /*Ivans@090109*/
