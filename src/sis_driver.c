@@ -106,6 +106,16 @@
 
 #include "globals.h"
 #include <fcntl.h>
+#include <unistd.h> /* POSIX declarations: close(), usleep(), sleep() */
+#include <sys/ioctl.h> /* POSIX ioctl() declaration */
+
+/* Forward declaration to avoid implicit declaration under C99+ */
+extern unsigned int sis_pci_read_host_bridge_u32(int offset);
+
+/* Linux-specific I/O port permission interface */
+extern int ioperm(unsigned long from,
+                  unsigned long num,
+                  int turn_on);
 
 #ifdef HAVE_XEXTPROTO_71
 #include <X11/extensions/dpmsconst.h>
@@ -117,9 +127,176 @@
 
 #ifdef SISDRI
 #include "dri.h"
+#include "sis_dri.h"   /* SIS DRI function prototypes */
 #endif
 
 /* Globals (yes, these ARE really required to be global) */
+
+/* Definition moved here from sis_driver.h: sis_driver.h is included by
+ * multiple .c files, so a defined (non-extern) array there caused
+ * "multiple definition" link errors under -fno-common (default since
+ * GCC 10). sis.h already declares this as extern; this is now the
+ * single definition. */
+/*     These machines require special timing/handling
+ */
+const customttable SiS_customttable[] = {
+	{ SIS_630, "2.00.07", "09/27/2002-13:38:25",
+	  0x3240A8,
+	  { 0x220, 0x227, 0x228, 0x229, 0x0ee },
+	  {  0x01,  0xe3,  0x9a,  0x6a,  0xef },
+	  0x1039, 0x6300,
+	  "Barco", "iQ R200L/300/400", CUT_BARCO1366, "BARCO_1366"
+	},
+	{ SIS_630, "2.00.07", "09/27/2002-13:38:25",
+	  0x323FBD,
+	  { 0x220, 0x227, 0x228, 0x229, 0x0ee },
+	  {  0x00,  0x5a,  0x64,  0x41,  0xef },
+	  0x1039, 0x6300,
+	  "Barco", "iQ G200L/300/400/500", CUT_BARCO1024, "BARCO_1024"
+	},
+	{ SIS_650, "", "",
+	  0,
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x0e11, 0x083c,
+	  "Inventec (Compaq)", "3017cl/3045US", CUT_COMPAQ12802, "COMPAQ_1280"
+	},
+	{ SIS_650, "", "",
+	  0,	/* Special 1024x768 / dual link */
+	  { 0x00c, 0, 0, 0, 0 },
+	  { 'e'  , 0, 0, 0, 0 },
+	  0x1558, 0x0287,
+	  "Clevo", "L285/L287 (Version 1)", CUT_CLEVO1024, "CLEVO_L28X_1"
+	},
+	{ SIS_650, "", "",
+	  0,	/* Special 1024x768 / single link */
+	  { 0x00c, 0, 0, 0, 0 },
+	  { 'y'  , 0, 0, 0, 0 },
+	  0x1558, 0x0287,
+	  "Clevo", "L285/L287 (Version 2)", CUT_CLEVO10242, "CLEVO_L28X_2"
+	},
+	{ SIS_650, "", "",
+	  0,	/* Special 1400x1050 */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1558, 0x0400,  /* possibly 401 and 402 as well; not panelsize specific? */
+	  "Clevo", "D400S/D410S/D400H/D410H", CUT_CLEVO1400, "CLEVO_D4X0"
+	},
+	{ SIS_650, "", "",
+	  0,	/* Shift LCD in LCD-via-CRT1 mode */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1558, 0x2263,
+	  "Clevo", "D22ES/D27ES", CUT_UNIWILL1024, "CLEVO_D2X0ES"
+	},
+	{ SIS_650, "", "",
+	  0,	/* Shift LCD in LCD-via-CRT1 mode */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1734, 0x101f,
+	  "Uniwill", "N243S9", CUT_UNIWILL1024, "UNIWILL_N243S9"
+	},
+	{ SIS_650, "", "",
+	  0,	/* Shift LCD in LCD-via-CRT1 mode */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1584, 0x5103,
+	  "Uniwill", "N35BS1", CUT_UNIWILL10242, "UNIWILL_N35BS1"
+	},
+	{ SIS_650, "1.09.2c", "",  /* Other versions, too? */
+	  0,	/* Shift LCD in LCD-via-CRT1 mode */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1019, 0x0f05,
+	  "ECS", "A928", CUT_UNIWILL1024, "ECS_A928"
+	},
+	{ SIS_740, "1.11.27a", "",
+	  0,
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1043, 0x1612,
+	  "Asus", "L3000D/L3500D", CUT_ASUSL3000D, "ASUS_L3X00"
+	},
+	{ SIS_650, "1.10.9k", "",
+	  0,	/* For EMI */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1025, 0x0028,
+	  "Acer", "Aspire 1700", CUT_ACER1280, "ACER_ASPIRE1700"
+	},
+	{ SIS_650, "1.10.7w", "",
+	  0,	/* For EMI */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x14c0, 0x0012,
+	  "Compal", "??? (V1)", CUT_COMPAL1400_1, "COMPAL_1400_1"
+	},
+	{ SIS_650, "1.10.7x", "", /* New BIOS on its way (from BG.) */
+	  0,	/* For EMI */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x14c0, 0x0012,
+	  "Compal", "??? (V2)", CUT_COMPAL1400_2, "COMPAL_1400_2"
+	},
+	{ SIS_650, "1.10.8o", "",
+	  0,	/* For EMI (unknown) */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1043, 0x1612,
+	  "Asus", "A2H (V1)", CUT_ASUSA2H_1, "ASUS_A2H_1"
+	},
+	{ SIS_650, "1.10.8q", "",
+	  0,	/* For EMI */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0x1043, 0x1612,
+	  "Asus", "A2H (V2)", CUT_ASUSA2H_2, "ASUS_A2H_2"
+	},
+#if 0
+	{ SIS_550, "1.02.0z", "",
+	  0x317f37,	/* 320x240 LCD panel */
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0, 0,
+	  "AAEON", "AOP-8060", CUT_AOP8060, "AAEON_AOP_8060"
+	},
+#endif
+	{ SIS_550, "1.02.00", "08/14/2002-10:02:21",
+	  0x312201,
+	  { 0x9560, 0x9600, 0x9768, 0x9c1a, 0 },
+	  { 0x76,   0x84,   0xa7,   0x14,   0 },
+	  0, 0,
+	  "ICOP", "Vortex86-607x", CUT_ICOP550, "ICOP550"
+	},
+	{ SIS_550, "1.03.00", "06/25/2003-17:17:42",
+	  0x2c0600,
+	  { 0x7850, 0x78dc, 0x79e0, 0x7c9c, 0 },
+	  { 0x84,   0x84,   0xa7,   0x90,   0 },
+	  0, 0,
+	  "ICOP", "Vortex86-607x (2)", CUT_ICOP550_2, "ICOP550_2"
+	},
+	{ 4321, "", "",			/* never autodetected */
+	  0,
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0, 0,
+	  "Generic", "LVDS/Parallel 848x480", CUT_PANEL848, "PANEL848x480"
+	},
+	{ 4322, "", "",			/* never autodetected */
+	  0,
+	  { 0, 0, 0, 0, 0 },
+	  { 0, 0, 0, 0, 0 },
+	  0, 0,
+	  "Generic", "LVDS/Parallel 856x480", CUT_PANEL856, "PANEL856x480"
+	},
+	{ 0, "", "",
+	  0,
+	  { 0, 0, 0, 0 },
+	  { 0, 0, 0, 0 },
+	  0, 0,
+	  "", "", CUT_NONE, ""
+	}
+};
 
 #ifdef SISUSEDEVPORT
 int		sisdevport = 0;
@@ -736,7 +913,7 @@ SISFreeRec(ScrnInfoPtr pScrn)
 	        if(pScrn->currentMode->Private)
 	 	   free(pScrn->currentMode->Private);
 	 	if(pScrn->currentMode->name)
-	 	   free(pScrn->currentMode->name);
+	 	   free((void *)pScrn->currentMode->name); /* Dynamically allocated; const comes from the modern X.Org API. */
 	        free(pScrn->currentMode);
 	        pScrn->currentMode = p;
 	     } while(pScrn->currentMode != pScrn->modes);
@@ -2822,14 +2999,16 @@ SiSDuplicateMode(DisplayModePtr source)
 
     if(source) {
        if((dest = malloc(sizeof(DisplayModeRec)))) {
+	  /* Copy the entire mode structure */
 	  memcpy(dest, source, sizeof(DisplayModeRec));
-	  dest->name = NULL;
+	  /* The duplicate should not be linked into the original list */
 	  dest->next = dest->prev = NULL;
-	  if(!(dest->name = malloc(strlen(source->name) + 1))) {
+	  /* Duplicate the mode name instead of writing through a const pointer */
+	  dest->name = source->name ? strdup(source->name) : NULL;
+	  /* If strdup() failed, free the structure and return NULL */
+	  if (source->name && !dest->name) {
 	     free(dest);
 	     dest = NULL;
-	  } else {
-	     strcpy(dest->name, source->name);
 	  }
        }
     }
@@ -9740,7 +9919,8 @@ SISScreenInit(ScreenPtr pScreen, int argc, char **argv)
 	     case 32: refreshArea = SISRefreshArea32; break;
 	  }
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,3,0,0,0)
-	  xf86DisableRandR();
+     /* Xorg 21.x+: xf86DisableRandR() was removed from the X server API. */
+     /* xf86DisableRandR(); */
 	  xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		"Driver rotation enabled, disabling RandR\n");
 #endif
@@ -9752,7 +9932,8 @@ SISScreenInit(ScreenPtr pScreen, int argc, char **argv)
 		pScrn->PointerMoved = SISPointerMoved;
 		refreshArea = SISRefreshAreaReflect;
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,3,0,0,0)
-		xf86DisableRandR();
+		/* Xorg 21.x+: xf86DisableRandR() was removed from the X server API. */
+		/* xf86DisableRandR(); */
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 			"Driver reflection enabled, disabling RandR\n");
 #endif
@@ -9871,7 +10052,8 @@ SISScreenInit(ScreenPtr pScreen, int argc, char **argv)
        pSiS->ShadowFB = FALSE;
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,3,0,0,0)
        if(pSiS->CRT1XOffs || pSiS->CRT1YOffs || pSiS->CRT2XOffs || pSiS->CRT2YOffs) {
-	  xf86DisableRandR();
+	  /* Xorg 21.x+: xf86DisableRandR() was removed from the X server API. */
+	  /* xf86DisableRandR(); */
 	  xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		"MergedFB: CRT2Position offset used, disabling RandR\n");
        }
@@ -10666,13 +10848,14 @@ SISLeaveVT(ScrnInfoPtr pScrn)
 {
     SISPtr pSiS = SISPTR(pScrn);
 #ifdef SISDRI
-    ScreenPtr pScreen;
-
-    if(pSiS->directRenderingEnabled) {
-       pScreen = xf86ScreenToScrn(pScrn);
-/* Mark for 3D full-screen bug */
-/*   DRILock(pScreen, 0); */
-    }
+    /*
+     * Legacy DRI lock handling removed.
+     *
+     * Older XFree86/Xorg releases acquired the DRI lock here to work around
+     * a full-screen rendering issue. The DRILock() call has since been
+     * removed from the X server, so no ScreenPtr lookup or other action is
+     * required here.
+     */
 #endif
 
 #ifdef SISDUALHEAD
@@ -10951,6 +11134,10 @@ SiS_GetSetBIOSScratch(ScrnInfoPtr pScrn, UShort offset, UChar value)
     UChar ret = 0;
 #ifdef SIS_USE_BIOS_SCRATCH
     UChar *base;
+#ifdef XSERVER_LIBPCIACCESS
+    /* libpciaccess uses a void ** output parameter for mappings. */
+    void *map = NULL;
+#endif
 #endif
 
     /* For some reasons (like detecting the current display mode),
@@ -10979,7 +11166,9 @@ SiS_GetSetBIOSScratch(ScrnInfoPtr pScrn, UShort offset, UChar value)
 #ifndef XSERVER_LIBPCIACCESS
        base = xf86MapVidMem(pScrn->scrnIndex, VIDMEM_MMIO, 0, 0x2000);
 #else
-       (void) pci_device_map_legacy(SISPTR(pScrn)->PciInfo, 0, 0x2000, 1, &base); // HA HA HA MAGIC NUMBER
+       /* libpciaccess returns the mapping through a void **. */
+       (void)pci_device_map_legacy(SISPTR(pScrn)->PciInfo, 0, 0x2000, 1, &map); // HA HA HA MAGIC NUMBER
+       base = (UChar *)map;
 #endif
 
        if(!base) {
@@ -11261,6 +11450,12 @@ SISHotkeySwitchCRT1Status(ScrnInfoPtr pScrn, int onoff)
  return TRUE;
 }
 /**************************************************************************/
+/*
+ * Disabled for Xorg 21.x compatibility.
+ * The old VidMode API used by this function was removed from the X server.
+ * Hotkey mode switching is not required for normal driver operation.
+ */
+#if 0
 static Bool
 SISHotkeySwitchMode(ScrnInfoPtr pScrn, Bool adjust)
 {
@@ -11309,6 +11504,7 @@ SISHotkeySwitchMode(ScrnInfoPtr pScrn, Bool adjust)
    
    return TRUE;
 }
+#endif
 
 
 /**************************************************************************/

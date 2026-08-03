@@ -43,7 +43,10 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#ifndef GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
+/* Xorg 21.x compatibility: use #if for ABI version comparison.
+ * #ifndef only accepts macro names, not expressions.
+ */
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
 #endif
 #include "compiler.h"

@@ -662,21 +662,11 @@ SiSAccelInit(ScreenPtr pScreen)
     pSiS->exa_scratch = NULL;
 #endif
 
-#if 1
 #ifdef SIS_USE_EXA
-    if(!pSiS->NoAccel) {
-       if(pSiS->useEXA && pScrn->bitsPerPixel == 24) {
-          if(exaGetVersion() <= EXA_MAKE_VERSION(0, 1, 0)) {
-	     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"This version of EXA is broken for 24bpp framebuffers\n");
-	     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			"\t- disabling 2D acceleration and Xv\n");
-	     pSiS->NoAccel = TRUE;
-	     pSiS->NoXvideo = TRUE; /* No fbmem manager -> no xv */
-	  }
-       }
-    }
-#endif
+    /* Obsolete EXA 0.1.x compatibility check.
+     * Modern Xorg/EXA no longer provides exaGetVersion()
+     * or EXA_MAKE_VERSION().
+     */
 #endif
 
     if(!pSiS->NoAccel) {

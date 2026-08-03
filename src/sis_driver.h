@@ -131,167 +131,6 @@ static const chswtable mychswtable[] = {
 	{ 0,      0,      ""       , ""       }
 };
 
-/*     These machines require special timing/handling
- */
-const customttable SiS_customttable[] = {
-	{ SIS_630, "2.00.07", "09/27/2002-13:38:25",
-	  0x3240A8,
-	  { 0x220, 0x227, 0x228, 0x229, 0x0ee },
-	  {  0x01,  0xe3,  0x9a,  0x6a,  0xef },
-	  0x1039, 0x6300,
-	  "Barco", "iQ R200L/300/400", CUT_BARCO1366, "BARCO_1366"
-	},
-	{ SIS_630, "2.00.07", "09/27/2002-13:38:25",
-	  0x323FBD,
-	  { 0x220, 0x227, 0x228, 0x229, 0x0ee },
-	  {  0x00,  0x5a,  0x64,  0x41,  0xef },
-	  0x1039, 0x6300,
-	  "Barco", "iQ G200L/300/400/500", CUT_BARCO1024, "BARCO_1024"
-	},
-	{ SIS_650, "", "",
-	  0,
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x0e11, 0x083c,
-	  "Inventec (Compaq)", "3017cl/3045US", CUT_COMPAQ12802, "COMPAQ_1280"
-	},
-	{ SIS_650, "", "",
-	  0,	/* Special 1024x768 / dual link */
-	  { 0x00c, 0, 0, 0, 0 },
-	  { 'e'  , 0, 0, 0, 0 },
-	  0x1558, 0x0287,
-	  "Clevo", "L285/L287 (Version 1)", CUT_CLEVO1024, "CLEVO_L28X_1"
-	},
-	{ SIS_650, "", "",
-	  0,	/* Special 1024x768 / single link */
-	  { 0x00c, 0, 0, 0, 0 },
-	  { 'y'  , 0, 0, 0, 0 },
-	  0x1558, 0x0287,
-	  "Clevo", "L285/L287 (Version 2)", CUT_CLEVO10242, "CLEVO_L28X_2"
-	},
-	{ SIS_650, "", "",
-	  0,	/* Special 1400x1050 */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1558, 0x0400,  /* possibly 401 and 402 as well; not panelsize specific? */
-	  "Clevo", "D400S/D410S/D400H/D410H", CUT_CLEVO1400, "CLEVO_D4X0"
-	},
-	{ SIS_650, "", "",
-	  0,	/* Shift LCD in LCD-via-CRT1 mode */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1558, 0x2263,
-	  "Clevo", "D22ES/D27ES", CUT_UNIWILL1024, "CLEVO_D2X0ES"
-	},
-	{ SIS_650, "", "",
-	  0,	/* Shift LCD in LCD-via-CRT1 mode */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1734, 0x101f,
-	  "Uniwill", "N243S9", CUT_UNIWILL1024, "UNIWILL_N243S9"
-	},
-	{ SIS_650, "", "",
-	  0,	/* Shift LCD in LCD-via-CRT1 mode */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1584, 0x5103,
-	  "Uniwill", "N35BS1", CUT_UNIWILL10242, "UNIWILL_N35BS1"
-	},
-	{ SIS_650, "1.09.2c", "",  /* Other versions, too? */
-	  0,	/* Shift LCD in LCD-via-CRT1 mode */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1019, 0x0f05,
-	  "ECS", "A928", CUT_UNIWILL1024, "ECS_A928"
-	},
-	{ SIS_740, "1.11.27a", "",
-	  0,
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1043, 0x1612,
-	  "Asus", "L3000D/L3500D", CUT_ASUSL3000D, "ASUS_L3X00"
-	},
-	{ SIS_650, "1.10.9k", "",
-	  0,	/* For EMI */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1025, 0x0028,
-	  "Acer", "Aspire 1700", CUT_ACER1280, "ACER_ASPIRE1700"
-	},
-	{ SIS_650, "1.10.7w", "",
-	  0,	/* For EMI */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x14c0, 0x0012,
-	  "Compal", "??? (V1)", CUT_COMPAL1400_1, "COMPAL_1400_1"
-	},
-	{ SIS_650, "1.10.7x", "", /* New BIOS on its way (from BG.) */
-	  0,	/* For EMI */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x14c0, 0x0012,
-	  "Compal", "??? (V2)", CUT_COMPAL1400_2, "COMPAL_1400_2"
-	},
-	{ SIS_650, "1.10.8o", "",
-	  0,	/* For EMI (unknown) */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1043, 0x1612,
-	  "Asus", "A2H (V1)", CUT_ASUSA2H_1, "ASUS_A2H_1"
-	},
-	{ SIS_650, "1.10.8q", "",
-	  0,	/* For EMI */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0x1043, 0x1612,
-	  "Asus", "A2H (V2)", CUT_ASUSA2H_2, "ASUS_A2H_2"
-	},
-#if 0
-	{ SIS_550, "1.02.0z", "",
-	  0x317f37,	/* 320x240 LCD panel */
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0, 0,
-	  "AAEON", "AOP-8060", CUT_AOP8060, "AAEON_AOP_8060"
-	},
-#endif
-	{ SIS_550, "1.02.00", "08/14/2002-10:02:21",
-	  0x312201,
-	  { 0x9560, 0x9600, 0x9768, 0x9c1a, 0 },
-	  { 0x76,   0x84,   0xa7,   0x14,   0 },
-	  0, 0,
-	  "ICOP", "Vortex86-607x", CUT_ICOP550, "ICOP550"
-	},
-	{ SIS_550, "1.03.00", "06/25/2003-17:17:42",
-	  0x2c0600,
-	  { 0x7850, 0x78dc, 0x79e0, 0x7c9c, 0 },
-	  { 0x84,   0x84,   0xa7,   0x90,   0 },
-	  0, 0,
-	  "ICOP", "Vortex86-607x (2)", CUT_ICOP550_2, "ICOP550_2"
-	},
-	{ 4321, "", "",			/* never autodetected */
-	  0,
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0, 0,
-	  "Generic", "LVDS/Parallel 848x480", CUT_PANEL848, "PANEL848x480"
-	},
-	{ 4322, "", "",			/* never autodetected */
-	  0,
-	  { 0, 0, 0, 0, 0 },
-	  { 0, 0, 0, 0, 0 },
-	  0, 0,
-	  "Generic", "LVDS/Parallel 856x480", CUT_PANEL856, "PANEL856x480"
-	},
-	{ 0, "", "",
-	  0,
-	  { 0, 0, 0, 0 },
-	  { 0, 0, 0, 0 },
-	  0, 0,
-	  "", "", CUT_NONE, ""
-	}
-};
-
 /*     Our TV modes for the 6326. The data in these structures
  *     is mainly correct, but since we use our private CR and
  *     clock values anyway, small errors do no matter.
@@ -785,7 +624,13 @@ static Bool SIS_pci_probe(DriverPtr driver, int entity_num, struct pci_device *d
 /* ACPI Device Switch functions */
 static Bool SISHotkeySwitchCRT1Status(ScrnInfoPtr pScrn,int onoff);/*hotkey pressing: switch CRT1 on/off*/
 static Bool SISHotkeySwitchCRT2Status(ScrnInfoPtr pScrn,ULong newvbflags ,ULong newvbflags3);/*LCD on/off*/
-static Bool SISHotkeySwitchMode(ScrnInfoPtr pScrn, Bool adjust);/*Resolution optimal function*/
+/*
+ * Disabled for Xorg 21.x compatibility.
+ * The implementation depends on the removed VidMode API.
+ */
+#if 0
+static Bool SISHotkeySwitchMode(ScrnInfoPtr pScrn, Bool adjust); /* Resolution optimal function */
+#endif
 
 /* Optional functions */
 #ifdef SISDUALHEAD

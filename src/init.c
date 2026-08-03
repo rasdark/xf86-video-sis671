@@ -62,6 +62,14 @@
 
 #include "init.h"
 
+/* External PCI host bridge and device access helpers.
+ * Used for legacy SiS hardware registers on modern Xorg / libpciaccess builds.
+ */
+extern unsigned int sis_pci_read_host_bridge_u32(int offset);
+extern void sis_pci_write_host_bridge_u32(int offset, unsigned int value);
+extern void sis_pci_write_host_bridge_u8(int offset, unsigned char value);
+extern unsigned int sis_pci_read_device_u32(int device, int offset);
+
 #ifdef SIS300
 #include "300vtbl.h"
 #endif
@@ -2656,7 +2664,8 @@ SiS_SetCRT1FIFO_630(struct SiS_Private *SiS_Pr, unsigned short ModeNo,
    sisfb_write_nbridge_pci_dword(SiS_Pr, 0x50, templ);
    templ = sisfb_read_nbridge_pci_dword(SiS_Pr, 0xA0);
 #else
-   pciWriteLong(0x00000000, 0x50, templ);
+   /* Replace legacy pciWriteLong() with libpciaccess wrapper. */
+   sis_pci_write_host_bridge_u32(0x50, templ);
    templ = sis_pci_read_host_bridge_u32(0xA0);
 #endif
 
@@ -2677,7 +2686,8 @@ SiS_SetCRT1FIFO_630(struct SiS_Private *SiS_Pr, unsigned short ModeNo,
 #ifdef SIS_LINUX_KERNEL
    sisfb_write_nbridge_pci_dword(SiS_Pr, 0xA0, templ);
 #else
-   pciWriteLong(0x00000000, 0xA0, templ);
+   /* Replace legacy pciWriteLong() with libpciaccess wrapper. */
+   sis_pci_write_host_bridge_u32(0xA0, templ);
 #endif
 }
 #endif /* SIS300 */
@@ -3309,7 +3319,8 @@ SiS_Handle760(struct SiS_Private *SiS_Pr)
 #ifdef SIS_LINUX_KERNEL
    somebase = sisfb_read_mio_pci_word(SiS_Pr, 0x74);
 #else
-   somebase = pciReadWord(0x00001000, 0x74);
+   /* Replace legacy pciReadWord() with libpciaccess wrapper. */
+   somebase = sis_pci_read_device_u32(2, 0x74);
 #endif
    somebase &= 0xffff;
 
@@ -3330,8 +3341,9 @@ SiS_Handle760(struct SiS_Private *SiS_Pr)
    sisfb_write_nbridge_pci_byte(SiS_Pr, 0x7e, temp1);
    sisfb_write_nbridge_pci_byte(SiS_Pr, 0x8d, temp2);
 #else
-   pciWriteByte(0x00000000, 0x7e, temp1);
-   pciWriteByte(0x00000000, 0x8d, temp2);
+   /* Replace legacy pciWriteByte() with libpciaccess wrapper. */
+   sis_pci_write_host_bridge_u8(0x7e, temp1);
+   sis_pci_write_host_bridge_u8(0x8d, temp2);
 #endif
 
    SiS_SetRegByte((somebase + 0x85), temp3);

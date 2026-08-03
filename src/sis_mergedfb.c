@@ -42,6 +42,9 @@
 #include "dixstruct.h"
 #include "globals.h"
 
+/* Required for strdup() when generating mode names on Xorg 21.x */
+#include <string.h>
+
 #ifdef SISXINERAMA
 #include "resource.h"
 #include "windowstr.h"
@@ -329,10 +332,13 @@ SiSCopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest,
     mode->Clock = (int)(mode->VRefresh * 1000.0);
 
     /* Generate a mode name */
+    /*
+     * Xorg 21.x changed DisplayModeRec.name to "const char *".
+     * Allocate the string separately and assign it directly instead of
+     * writing through mode->name with strcpy(), which is no longer valid.
+     */
     sprintf(namebuffer, "%dx%d", mode->HDisplay, mode->VDisplay);
-    if((mode->name = malloc(strlen(namebuffer) + 1))) {
-       strcpy(mode->name, namebuffer);
-    }
+    mode->name = strdup(namebuffer);
 
     if(!quiet) {
        Bool printname1 = TRUE, printname2 = TRUE;
@@ -1439,6 +1445,12 @@ SISMFBPointerMoved(int scrnIndex, int x, int y)
     ScrnInfoPtr	pScrn1 = xf86Screens[scrnIndex];
     SISPtr	pSiS = SISPTR(pScrn1);
     ScrnInfoPtr	pScrn2 = pSiS->CRT2pScrn;
+    /*
+     * Xorg 21.x compatibility:
+     *   miPointerWarpCursor() requires a ScreenPtr argument.
+     *   Convert ScrnInfoPtr to ScreenPtr for the new pointer API.
+     */
+    ScreenPtr   pScreen = xf86ScrnToScreen(pScrn1);
     region	out, in1, in2, f2, f1;
     int		deltax, deltay;
     int		temp1, temp2;
@@ -1448,7 +1460,6 @@ SISMFBPointerMoved(int scrnIndex, int x, int y)
     int		CRT1HDisplay, CRT1VDisplay, CRT2HDisplay, CRT2VDisplay;
     int		HVirt = pScrn1->virtualX;
     int		VVirt = pScrn1->virtualY;
-    int		sigstate;
     Bool	doit = FALSE, HaveNonRect = FALSE, HaveOffsRegions = FALSE;
     SiSScrn2Rel	srel = ((SiSMergedDisplayModePtr)pSiS->CurrentLayout.mode->Private)->CRT2Position;
 
@@ -1523,9 +1534,15 @@ SISMFBPointerMoved(int scrnIndex, int x, int y)
        }
        if(doit) {
 	  UpdateCurrentTime();
-	  sigstate = xf86BlockSIGIO();
-	  miPointerAbsoluteCursor(x, y, currentTime.milliseconds);
-	  xf86UnblockSIGIO(sigstate);
+	  /*
+	   * Xorg 21.x compatibility:
+	   *   Use input_lock()/input_unlock() for input synchronization.
+	   *   Use miPointerWarpCursor() instead of the removed
+	   *   miPointerAbsoluteCursor() for absolute pointer movement.
+	   */
+	  input_lock();
+	  miPointerWarpCursor(inputInfo.pointer, pScreen, x, y);
+	  input_unlock();
 	  return;
        }
     }
