@@ -42,6 +42,14 @@
 #include "dixstruct.h"
 
 #include "sis_videostr.h"
+/*
+ * Xorg 21.x compatibility:
+ *   Include driver and video bridge declarations to provide prototypes for
+ *   SISCRT1PreInit() and SiS_DetectVGA1(), avoiding implicit declarations
+ *   with modern compilers.
+ */
+#include "sis_driver.h"
+#include "sis_vb.h"
 
 #ifdef TWDEBUG
 #define SIS_NEED_orSISIDXREG
@@ -974,7 +982,13 @@ unsigned int SISVGADetected(ScrnInfoPtr pScrn)
  ***********************************/
 
 static void
-sisutil_prepare_string(xSiSCtrlCommandReply *sdcbuf, char *mystring)
+/*
+ * Xorg 21.x compatibility:
+ *   Monitor identifiers are exposed as const char *.
+ *   This helper only reads the string, so accept const input and avoid
+ *   discarding the const qualifier with modern compilers.
+ */
+sisutil_prepare_string(xSiSCtrlCommandReply *sdcbuf, const char *mystring)
 {
    int slen = 0;
    sdcbuf->sdc_buffer[0] = 0;

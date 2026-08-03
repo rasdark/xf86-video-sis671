@@ -37,6 +37,9 @@
 
 #include "initextx.h"
 
+/* Provides declarations for string functions used by the Xorg 21.x compatibility fixes. */
+#include <string.h>
+
 static void
 SiS_MakeClockRegs(ScrnInfoPtr pScrn, int clock, unsigned char *p2b, unsigned char *p2c)
 {
@@ -297,8 +300,16 @@ SiSBuildBuiltInModeList(ScrnInfoPtr pScrn, BOOLEAN includelcdmodes, BOOLEAN isfo
       }
 
       current = new;
-      sprintf(current->name, "%dx%d", pSiS->SiS_Pr->SiS_RefIndex[i].XRes,
-				      pSiS->SiS_Pr->SiS_RefIndex[i].YRes);
+      /* Duplicate the mode name because DisplayModeRec::name
+       * is a const char * in modern Xorg headers.
+       */
+      char name[32];
+
+      snprintf(name, sizeof(name), "%dx%d",
+               pSiS->SiS_Pr->SiS_RefIndex[i].XRes,
+               pSiS->SiS_Pr->SiS_RefIndex[i].YRes);
+
+      current->name = xnfstrdup(name);
 
       current->status = MODE_OK;
 
@@ -453,7 +464,8 @@ SiSBuildBuiltInModeList(ScrnInfoPtr pScrn, BOOLEAN includelcdmodes, BOOLEAN isfo
 
 		  pSiS->AddedPlasmaModes = TRUE;
 
-		  strcpy(current->name, SiS_PlasmaMode[l].name);
+		  /* Duplicate the mode name because DisplayModeRec::name is const in Xorg 21.x. */
+		  current->name = xnfstrdup(SiS_PlasmaMode[l].name);
 
 		  current->status = MODE_OK;
 
@@ -536,8 +548,16 @@ SiSBuildBuiltInModeList(ScrnInfoPtr pScrn, BOOLEAN includelcdmodes, BOOLEAN isfo
 
 	    current = new;
 
-	    sprintf(current->name, "%dx%d", pSiS->SiS_Pr->CP_HDisplay[i],
-				pSiS->SiS_Pr->CP_VDisplay[i]);
+           /* Duplicate the mode name because DisplayModeRec::name
+            * is a const char * in modern Xorg headers.
+            */
+           char name[32];
+
+           snprintf(name, sizeof(name), "%dx%d",
+                    pSiS->SiS_Pr->CP_HDisplay[i],
+                    pSiS->SiS_Pr->CP_VDisplay[i]);
+
+           current->name = xnfstrdup(name);
 
 	    current->status = MODE_OK;
 

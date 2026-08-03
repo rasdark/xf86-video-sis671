@@ -1255,7 +1255,8 @@ typedef struct {
     unsigned int	cmdQueueSizeMask;
     unsigned int	cmdQ_SharedWritePort_2D;
     volatile unsigned int	*cmdQ_SharedWritePort;
-    unsigned int	*cmdQ_SharedWritePortBackup;
+    /* Must match volatile qualifier of cmdQ_SharedWritePort (saved/restored as-is) */
+    volatile unsigned int       *cmdQ_SharedWritePortBackup;
     unsigned int	cmdQueueSize_div2;
     unsigned int	cmdQueueSize_div4;
     unsigned int	cmdQueueSize_4_3;

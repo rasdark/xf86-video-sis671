@@ -45,6 +45,9 @@
 #include "sis_regs.h"
 #include "sis_dac.h"
 
+/* Xorg 21.x compatibility: usleep() requires the POSIX declaration from unistd.h. */
+#include <unistd.h>
+
 #include "sis_vb.h"
 
 static Bool

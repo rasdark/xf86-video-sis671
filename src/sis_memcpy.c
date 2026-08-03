@@ -32,6 +32,9 @@
 #endif
 
 #include "sis.h"
+#include <cpuid.h>  /* GCC/Clang CPUID intrinsic used on x86-64.
+                       The old inline assembly below is a 32-bit PIC
+                       workaround and is not valid for the x86-64 ABI. */
 
 #if 0			/* Debug */
 #define SISDGBMC
@@ -860,15 +863,24 @@ static void sigill_handler(void)
 }
 #endif
 
-void __cpuid(int* cpuinfo, int info)
+static void SiS_cpuid(int* cpuinfo, int info)
 {
+#if defined(__x86_64__)
+    /* Use compiler intrinsic on x86-64.
+     * The old xchg ebx/edi PIC workaround was written for 32-bit
+     * code and does not obey the x86-64 calling convention.
+     */
+    __cpuid(info, cpuinfo[0], cpuinfo[1], cpuinfo[2], cpuinfo[3]);
+#else
+    /* i386: preserve ebx for PIC code around cpuid. */
     __asm__ __volatile__(
-	"xchg %%ebx, %%edi;"
-	"cpuid;"
-	"xchg %%ebx, %%edi;"
-	:"=a" (cpuinfo[0]), "=D" (cpuinfo[1]), "=c" (cpuinfo[2]), "=d" (cpuinfo[3])
-	:"0" (info)
+        "xchg %%ebx, %%edi;"
+        "cpuid;"
+        "xchg %%ebx, %%edi;"
+        :"=a" (cpuinfo[0]), "=D" (cpuinfo[1]), "=c" (cpuinfo[2]), "=d" (cpuinfo[3])
+        :"0" (info)
     );
+#endif
 }
 
 
@@ -881,7 +893,7 @@ static Bool CheckOSforSSE(ScrnInfoPtr pScrn)
 #endif
     Bool sseSupported = FALSE;
     int cpuinfo[4];
-    __cpuid(cpuinfo, 1);
+    SiS_cpuid(cpuinfo, 1);
     sseSupported = cpuinfo[3] & (1 << 25) || FALSE;
 
 #ifdef SISDGBMC

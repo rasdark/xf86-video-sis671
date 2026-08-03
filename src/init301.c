@@ -75,6 +75,10 @@
 
 #include "init301.h"
 
+/* Forward declarations for SiS PCI helper functions to fix implicit declaration warnings/errors */
+extern unsigned int sis_pci_read_host_bridge_u32(int offset);
+extern unsigned int sis_pci_read_device_u32(int device, int offset);
+
 #ifdef SIS300
 #include "oem300.h"
 #endif
@@ -953,7 +957,8 @@ SiS_SetChrontelGPIO(struct SiS_Private *SiS_Pr, unsigned short myvbinfo)
 #ifdef SIS_LINUX_KERNEL
    acpibase = sisfb_read_lpc_pci_dword(SiS_Pr, 0x74);
 #else
-   acpibase = pciReadLong(0x00000800, 0x74);
+   /* Read ACPI base address from PCI config space (device 1, offset 0x74); replaces deprecated pciReadLong() */
+   acpibase = sis_pci_read_device_u32(1, 0x74);
 #endif
    acpibase &= 0xFFFF;
    if(!acpibase) return;
@@ -8192,6 +8197,8 @@ SiS_SetGroup5(struct SiS_Private *SiS_Pr, unsigned short ModeNo, unsigned short 
 }
 
 // PCF*
+/* Standardized function signature to 'static void' to explicitly indicate no return value */
+static void
 SiS_ModifyVB(struct SiS_Private *SiS_Pr)
 {                  
  

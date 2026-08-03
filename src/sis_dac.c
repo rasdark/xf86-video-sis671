@@ -81,6 +81,11 @@
 #define SIS_NEED_MYMMIO
 #include "sis_regs.h"
 #include "sis_dac.h"
+#include <unistd.h>  /* usleep() */
+
+/* Host bridge PCI configuration access wrappers provided by sis_setup.c. */
+extern unsigned int sis_pci_read_host_bridge_u32(int offset);
+extern void sis_pci_write_host_bridge_u32(int offset, unsigned int value);
 
 #if 0
 #define TWDEBUG_VID
@@ -697,8 +702,9 @@ SiS300Restore(ScrnInfoPtr pScrn, SISRegPtr sisReg)
 	  temp2 &= 0x00ffffff;
           temp2 |= (sisReg->sisRegsPCIA0 & ~0x00ffffff);
        }
-       pciWriteLong(0x00000000, 0x50, temp1);
-       pciWriteLong(0x00000000, 0xA0, temp2);
+       /* Modern Xorg/libpciaccess replacement for legacy pciWriteLong() calls. */
+       sis_pci_write_host_bridge_u32(0x50, temp1);
+       sis_pci_write_host_bridge_u32(0xA0, temp2);
     }
 
     /* Restore panel link/video bridge registers */

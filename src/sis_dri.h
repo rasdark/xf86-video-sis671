@@ -118,7 +118,14 @@ typedef struct {
   int dummy;
 } SISDRIContextRec, *SISDRIContextPtr;
 
-#ifdef XFree86Server
+/* XFree86Server is obsolete in modern X.Org releases.
+ * Keep these DRI wrapper prototypes visible unconditionally.
+ * The original source wrapped them in:
+ *
+ *   #ifdef XFree86Server
+ *   ...
+ *   #endif
+ */
 
 #include "screenint.h"
 
@@ -126,5 +133,4 @@ Bool SISDRIScreenInit(ScreenPtr pScreen);
 void SISDRICloseScreen(ScreenPtr pScreen);
 Bool SISDRIFinishScreenInit(ScreenPtr pScreen);
 
-#endif
 #endif
